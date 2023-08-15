@@ -1,6 +1,7 @@
 package main
 
 import (
+	"app-connector/config"
 	"encoding/xml"
 	"fmt"
 	"log"
@@ -32,11 +33,6 @@ type ResultData struct {
 	State   State    `xml:"State"`
 }
 
-// <Name>SPC_1CT0208AU02_ALM</Name>
-// <Index>0</Index>
-// <Archive>1d</Archive>
-// <Unit>-</Unit>
-// <FormulaOnTheFly>false</FormulaOnTheFly>
 type TagData struct {
 	XMLName         xml.Name `xml:"Tag"`
 	Name            string   `xml:"Name"`
@@ -45,13 +41,6 @@ type TagData struct {
 	FormulaOnTheFly string   `xml:"FormulaOnTheFly"`
 }
 
-// <State>
-//
-//	<IsValid>true</IsValid>
-//	<ErrorMessage />
-//	<ErrorCode>None</ErrorCode>
-//
-// </State>
 type State struct {
 	XMLName      xml.Name `xml:"State"`
 	IsValid      string   `xml:"IsValid"`
@@ -59,10 +48,6 @@ type State struct {
 	ErrorCode    string   `xml:"ErrorCode"`
 }
 
-// <TimeDataItem>
-// <Value>12</Value>
-// <Time>2023-04-08T00:00:00+07:00</Time>
-// </TimeDataItem>
 type Data struct {
 	XMLName      xml.Name `xml:"Data"`
 	TimeDataItem []TimeDataItem
@@ -74,10 +59,51 @@ type TimeDataItem struct {
 	Time    string   `xml:"Time"`
 }
 
+type RequestConnectAPI struct {
+	BasicAuth BasicAuth
+	Headers   map[string]string
+	Url       string
+}
+
+type RequestGetDataAPI struct {
+	BasicAuth BasicAuth
+	Headers   map[string]string
+	Url       string
+}
+
+type BasicAuth struct {
+	Username string
+	Password string
+}
+
+var client *resty.Client
+
+// TODO Config
+var reqConnect = RequestConnectAPI{BasicAuth: BasicAuth{Username: "pmaschnc2", Password: "Pmas1a2b3C@EgaT"}, Headers: map[string]string{"Content-Type": "text/xml", "SOAPAction": "http://www.SR-Suite.com/SRxServerWebService/Connect", "Host": "10.40.61.57"}, Url: "http://10.40.61.57/srxwebservice/SRxServerWebService.asmx"}
+var reqGetData = RequestConnectAPI{BasicAuth: BasicAuth{Username: "chn-c2", Password: "chn-c2pmas"}, Headers: map[string]string{"Content-Type": "text/xml", "SOAPAction": "http://www.SR-Suite.com/SRxServerWebService/GetSRxData", "Host": "10.40.61.57"}, Url: "http://10.40.61.57/srxwebservice/SRxServerWebService.asmx"}
+
 func main() {
-	fmt.Println("FUUUUUUUUUUUUUUUUUUUU")
+	fmt.Println("Start PMAS-CONNECTOR Application...")
+	config.ReadConfig()
+	log.Println(config.Config.App)
+
+	// InitClient()
+	// ConnectAPI()
+	// respBody, err := GetDataAPI()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// tagData, err := ParseXML(respBody)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// log.Printf("Data: %+v\n", tagData)
+
+}
+
+func InitClient() {
 	// Create a Resty Client
-	client := resty.New()
+	client = resty.New()
 
 	// resp, err := client.R().
 	// 	EnableTrace().
@@ -93,9 +119,13 @@ func main() {
 	// fmt.Println("  Received At:", resp.ReceivedAt())
 	// fmt.Println("  Body       :\n", resp)
 	// fmt.Println()
+}
 
+func ConnectAPI() {
 	// Iqony
 	// Connect API
+
+	// Body
 	bodyConnect := `<?xml version="1.0" encoding="utf-8"?>
 	<soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://schemas.xmlsoap.org/soap/envelope/">
 	  <soap12:Body>
@@ -105,17 +135,15 @@ func main() {
 		</Connect>
 	  </soap12:Body>
 	</soap12:Envelope>`
+
 	// POST JSON string
 	// No need to set content type, if you have client level setting
 	resp, err := client.R().
-		SetBasicAuth("pmaschnc2", "Pmas1a2b3C@EgaT").
-		SetHeaders(map[string]string{
-			"Content-Type": "text/xml",
-			"SOAPAction":   "http://www.SR-Suite.com/SRxServerWebService/Connect",
-			"Host":         "10.40.61.57",
-		}).
+		// SetBasicAuth("pmaschnc2", "Pmas1a2b3C@EgaT").
+		SetBasicAuth(reqConnect.BasicAuth.Username, reqConnect.BasicAuth.Password).
+		SetHeaders(reqConnect.Headers).
 		SetBody(bodyConnect).
-		Post("http://10.40.61.57/srxwebservice/SRxServerWebService.asmx")
+		Post(reqConnect.Url)
 	if err != nil {
 		fmt.Println("  Error      :", err)
 	}
@@ -129,7 +157,9 @@ func main() {
 	fmt.Println("  Received At:", resp.ReceivedAt())
 	fmt.Println("  Body       :\n", resp)
 	fmt.Println()
+}
 
+func GetDataAPI() ([]byte, error) {
 	bodyGetData := `<?xml version="1.0" encoding="utf-8"?>
 	<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
 	  <soap:Body>
@@ -160,15 +190,11 @@ func main() {
 	  </soap:Body>
 	</soap:Envelope>`
 	// Get data API
-	resp, err = client.R().
-		SetBasicAuth("chn-c2", "chn-c2pmas").
-		SetHeaders(map[string]string{
-			"Content-Type": "text/xml",
-			"SOAPAction":   "http://www.SR-Suite.com/SRxServerWebService/GetSRxData",
-			"Host":         "10.40.61.57",
-		}).
+	resp, err := client.R().
+		SetBasicAuth(reqGetData.BasicAuth.Username, reqGetData.BasicAuth.Password).
+		SetHeaders(reqGetData.Headers).
 		SetBody(bodyGetData).
-		Post("http://10.40.61.57/srxwebservice/SRxServerWebService.asmx")
+		Post(reqGetData.Url)
 	if err != nil {
 		fmt.Println("  Error      :", err)
 	}
@@ -184,13 +210,8 @@ func main() {
 	fmt.Println()
 	fmt.Println("=====================================================")
 
-	// Unmarshal
-	var respData Response
-	if err := xml.Unmarshal([]byte(resp.Body()), &respData); err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("Data: %+v\n", respData)
-	// log.Printf("Tag Name: %v\n", respData.SoapBody.Resp.ResultData.TagData.Name)
+	return resp.Body(), err
+
 	// Version SOAP 1.2
 	// Connect API
 	// bodyConnect = `<?xml version="1.0" encoding="utf-8"?>
@@ -226,4 +247,14 @@ func main() {
 	// fmt.Println("  Received At:", resp.ReceivedAt())
 	// fmt.Println("  Body       :\n", resp)
 	// fmt.Println()
+}
+
+func ParseXML(data []byte) (Response, error) {
+	// Unmarshal
+	var resp Response
+	err := xml.Unmarshal([]byte(data), &resp)
+	if err != nil {
+		log.Println(err)
+	}
+	return resp, err
 }
