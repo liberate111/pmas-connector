@@ -22,3 +22,4 @@ go.work
 
 result*
 ALM*
+/config/config*.yaml
