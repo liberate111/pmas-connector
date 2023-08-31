@@ -7,9 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/robfig/cron/v3"
 )
 
 // Response for get data API
@@ -111,6 +115,38 @@ func init() {
 }
 
 func main() {
+	cronjob()
+}
+
+func gracefulShutdown(done chan bool) {
+	// Gracefully Shutdown
+	// Make channel listen for signals from OS
+	go func() {
+		c := make(chan os.Signal, 1) // we need to reserve to buffer size 1, so the notifier are not blocked
+		signal.Notify(c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+		<-c
+		logger.Logger.Info("Application shutdown...")
+		done <- true
+	}()
+}
+
+func cronjob() {
+	localTime, _ := time.LoadLocation("Asia/Bangkok")
+	c := cron.New(cron.WithLocation(localTime))
+
+	// chn-c2
+	// c.AddFunc("@midnight", chn_c2)
+	// for test
+	c.AddFunc("@every 30s", chn_c2)
+	c.Start()
+	done := make(chan bool, 1)
+	gracefulShutdown(done)
+	<-done
+	defer c.Stop()
+}
+
+func chn_c2() {
 	ConnectAPI()
 	respBody, err := GetDataAPI()
 	if err != nil {
@@ -124,6 +160,10 @@ func main() {
 	logger.Logger.Debug("result data", "data", tagData)
 
 	// business logic
+	err = checkStatus(tagData)
+	if err != nil {
+		logger.Logger.Error("check status", "error", err.Error())
+	}
 }
 
 func InitClient() {
@@ -217,4 +257,22 @@ func ParseXML(data []byte) (Response, error) {
 		return resp, fmt.Errorf("parse xml encode data error %w", err)
 	}
 	return resp, err
+}
+
+func checkStatus(r Response) error {
+	// tags loop
+	for _, v := range r.SoapBody.Resp.ResultData {
+		if len(v.Data.TimeDataItem) != 2 {
+			logger.Logger.Error("check status", "error", "status value greater than 2", "tag", v.TagData.Name)
+			continue
+		}
+		if v.Data.TimeDataItem[0].Value == v.Data.TimeDataItem[1].Value {
+			logger.Logger.Debug("status not change", "tag", v.TagData.Name)
+			continue
+		}
+		// status change
+		// update to DB
+		logger.Logger.Debug("update to db")
+	}
+	return nil
 }
