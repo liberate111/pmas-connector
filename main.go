@@ -4,8 +4,8 @@ import (
 	"app-connector/config"
 	"app-connector/logger"
 	"encoding/xml"
+	"errors"
 	"fmt"
-	"log"
 	"log/slog"
 	"time"
 
@@ -112,21 +112,38 @@ func init() {
 
 func main() {
 	ConnectAPI()
-	// respBody, err := GetDataAPI()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// tagData, err := ParseXML(respBody)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// log.Printf("Data: %+v\n", tagData)
+	respBody, err := GetDataAPI()
+	if err != nil {
+		logger.Logger.Error("get data API", "error", err.Error())
+	}
 
+	tagData, err := ParseXML(respBody)
+	if err != nil {
+		logger.Logger.Error("parse xml data", "error", err.Error())
+	}
+	logger.Logger.Debug("result data", "data", tagData)
+
+	// business logic
 }
 
 func InitClient() {
 	// Create a Resty Client
 	client = resty.New()
+	client.DisableWarn = false
+	client.
+		// Set retry count to non zero to enable retries
+		SetRetryCount(3).
+		// You can override initial retry wait time.
+		// Default is 100 milliseconds.
+		SetRetryWaitTime(5 * time.Second).
+		// MaxWaitTime can be overridden as well.
+		// Default is 2 seconds.
+		SetRetryMaxWaitTime(20 * time.Second).
+		// SetRetryAfter sets callback to calculate wait time between retries.
+		// Default (nil) implies exponential backoff with jitter
+		SetRetryAfter(func(client *resty.Client, resp *resty.Response) (time.Duration, error) {
+			return 0, errors.New("quota exceeded")
+		})
 }
 
 func ConnectAPI() {
@@ -137,22 +154,13 @@ func ConnectAPI() {
 		SetBody(config.Config.Api.Connect.Body).
 		Post(config.Config.Api.Connect.Url)
 	if err != nil {
-		logger.Logger.Error("connect API", "error", err)
+		logger.Logger.Error("connect API", "error", err.Error())
 	}
 	logger.Logger.Debug("connect API", slog.Group("response", slog.Int("status", resp.StatusCode()), slog.Duration("response time", resp.Time()), slog.String("response body", resp.String())))
-	// fmt.Println("Connect API")
-	// fmt.Println("Response Info:")
-	// fmt.Println("  Error      :", err)
-	// fmt.Println("  Status Code:", resp.StatusCode())
-	// fmt.Println("  Status     :", resp.Status())
-	// fmt.Println("  Proto      :", resp.Proto())
-	// fmt.Println("  Time       :", resp.Time())
-	// fmt.Println("  Received At:", resp.ReceivedAt())
-	// fmt.Println("  Body       :\n", resp)
-	// fmt.Println()
 }
 
 func GetDataAPI() ([]byte, error) {
+	var v []byte
 	// Create request body
 	refTime := time.Now().AddDate(0, 0, -1).Format(time.RFC3339)
 	body := SOAPEnvelope{
@@ -172,7 +180,6 @@ func GetDataAPI() ([]byte, error) {
 	}
 
 	if len(config.Config.Api.GetData.Tags) == 0 {
-		var v []byte
 		return v, fmt.Errorf("length of tag is equal to zero")
 	}
 	var tags Tags
@@ -180,14 +187,14 @@ func GetDataAPI() ([]byte, error) {
 		tags.SRxTag = append(tags.SRxTag, SRxTag{Name: v})
 	}
 	body.Body.GetSRxData.Tags = tags
-	log.Printf("reqBody: %+v\n", body)
+	logger.Logger.Debug("get data API", slog.Group("request body", body))
 
 	// Encoding XML
 	xmlBody, err := xml.Marshal(body)
 	if err != nil {
-		log.Fatalf("Error XML encoding, %s", err)
+		return v, fmt.Errorf("xml encoding error %w", err)
 	}
-	log.Printf("xmlBody: %+v\n", string(xmlBody))
+	logger.Logger.Debug("get data API", "xml request body", string(xmlBody))
 
 	// Get data API
 	resp, err := client.R().
@@ -196,21 +203,9 @@ func GetDataAPI() ([]byte, error) {
 		SetBody(xmlBody).
 		Post(config.Config.Api.GetData.Url)
 	if err != nil {
-		fmt.Println("  Error      :", err)
+		return v, fmt.Errorf("request error %w", err)
 	}
-
-	fmt.Println("Get data API")
-	fmt.Println("Response Info:")
-	fmt.Println("  Error      :", err)
-	fmt.Println("  Status Code:", resp.StatusCode())
-	fmt.Println("  Status     :", resp.Status())
-	fmt.Println("  Proto      :", resp.Proto())
-	fmt.Println("  Time       :", resp.Time())
-	fmt.Println("  Received At:", resp.ReceivedAt())
-	fmt.Println("  Body       :\n", resp)
-	fmt.Println()
-	fmt.Println("=====================================================")
-
+	logger.Logger.Debug("get data API", slog.Group("response", slog.Int("status", resp.StatusCode()), slog.Duration("response time", resp.Time()), slog.String("response body", resp.String())))
 	return resp.Body(), err
 }
 
@@ -219,7 +214,7 @@ func ParseXML(data []byte) (Response, error) {
 	var resp Response
 	err := xml.Unmarshal([]byte(data), &resp)
 	if err != nil {
-		log.Println(err)
+		return resp, fmt.Errorf("parse xml encode data error %w", err)
 	}
 	return resp, err
 }
