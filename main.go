@@ -3,6 +3,7 @@ package main
 import (
 	"app-connector/config"
 	"app-connector/logger"
+	"database/sql/driver"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/robfig/cron/v3"
+	go_ora "github.com/sijms/go-ora/v2"
 )
 
 // Response for get data API
@@ -107,15 +109,41 @@ type SRxTag struct {
 }
 
 var client *resty.Client
+var conn *go_ora.Connection
+
+type TagStatus string
+
+const NUM_RED TagStatus = "14"
+const NUM_YELLOW TagStatus = "13"
+const NUM_GREEN TagStatus = "12"
+const NUM_MAGENTA TagStatus = "11"
+const NUM_PINK TagStatus = "2"
+const NUM_GREY TagStatus = "1"
+const STATUS_RED TagStatus = "RED"
+const STATUS_YELLOW TagStatus = "YELLOW"
+const STATUS_GREEN TagStatus = "GREEN"
+const STATUS_MAGENTA TagStatus = "MAGENTA"
+const STATUS_PINK TagStatus = "PINK"
+const STATUS_GREY TagStatus = "GREY"
 
 func init() {
+	var err error
 	config.ReadConfig()
 	logger.InitLog()
 	InitClient()
+	conn, err = ConnectOracleDB()
+	if err != nil {
+		os.Exit(1)
+	}
+
+	if config.Config.App.InitialDB {
+		InitTable()
+	}
 }
 
 func main() {
-	cronjob()
+	time.Sleep(1 * time.Minute)
+	// cronjob()
 }
 
 func gracefulShutdown(done chan bool) {
@@ -139,6 +167,10 @@ func cronjob() {
 	// c.AddFunc("@midnight", chn_c2)
 	// for test
 	c.AddFunc("@every 30s", chn_c2)
+
+	// other site
+	//
+
 	c.Start()
 	done := make(chan bool, 1)
 	gracefulShutdown(done)
@@ -275,4 +307,101 @@ func checkStatus(r Response) error {
 		logger.Logger.Debug("update to db")
 	}
 	return nil
+}
+
+func ConnectOracleDB() (*go_ora.Connection, error) {
+	db := config.Config.DB.Oracle
+	connStr := go_ora.BuildUrl(db.Url, db.Port, db.ServiceName, db.Username, db.Password, nil)
+	conn, err := go_ora.NewConnection(connStr)
+	if err != nil {
+		logger.Logger.Error("connect to db", "error", err.Error())
+		return nil, err
+	}
+	err = conn.Open()
+	if err != nil {
+		logger.Logger.Error("connect to db", "error", err.Error())
+		return nil, err
+	}
+	return conn, nil
+}
+
+func InitTable() {
+	// API
+	ConnectAPI()
+	respBody, err := GetDataAPI()
+	if err != nil {
+		logger.Logger.Error("get data API", "error", err.Error())
+	}
+
+	tagData, err := ParseXML(respBody)
+	if err != nil {
+		logger.Logger.Error("parse xml data", "error", err.Error())
+	}
+	logger.Logger.Debug("result data", "data", tagData)
+
+	// DB
+	t := time.Now()
+	sql := fmt.Sprintf(`UPDATE %s SET STATUS = :1, SFROM = :2, "TimeStamp" = :3 WHERE KPI_TAG = :4`, config.Config.DB.Oracle.TableName)
+	updStmt, err := conn.Prepare(sql)
+	if err != nil {
+		logger.Logger.Error("initial data in table", "error", err.Error())
+	}
+
+	defer func() {
+		_ = updStmt.Close()
+	}()
+
+	var sform, status string
+	var tsz time.Time
+
+	for i, v := range tagData.SoapBody.Resp.ResultData {
+		sform, err = convertStatus(v.Data.TimeDataItem[0].Value)
+		if err != nil {
+			logger.Logger.Error("initial data in table", "error", err.Error())
+			continue
+		}
+		status, err = convertStatus(v.Data.TimeDataItem[1].Value)
+		if err != nil {
+			logger.Logger.Error("initial data in table", "error", err.Error())
+			continue
+		}
+		tsz, err = timestamptz()
+		if err != nil {
+			logger.Logger.Error("initial data in table", "error", err.Error())
+			continue
+		}
+		_, err = updStmt.Exec([]driver.Value{status, sform, go_ora.TimeStampTZ(tsz), v.TagData.Name})
+		if err != nil {
+			logger.Logger.Error("initial data in table", "error", err.Error())
+		}
+		fmt.Println("time: ", tsz.String())
+		fmt.Println("Finish update: ", time.Now().Sub(t), "----", i)
+	}
+}
+
+func convertStatus(num string) (string, error) {
+	if num == string(NUM_RED) {
+		return string(STATUS_RED), nil
+	} else if num == string(NUM_YELLOW) {
+		return string(STATUS_YELLOW), nil
+	} else if num == string(NUM_GREEN) {
+		return string(STATUS_GREEN), nil
+	} else if num == string(NUM_MAGENTA) {
+		return string(STATUS_MAGENTA), nil
+	} else if num == string(NUM_PINK) {
+		return string(STATUS_PINK), nil
+	} else if num == string(NUM_GREY) {
+		return string(STATUS_GREY), nil
+	}
+	return "", fmt.Errorf("error not match any status type: %v", num)
+}
+
+func timestamptz() (time.Time, error) {
+	t := time.Now()
+	loc := "Asia/Bangkok"
+	zoneLoc, err := time.LoadLocation(loc)
+	if err != nil {
+		return t, err
+	}
+	return t.In(zoneLoc), nil
 }

@@ -8,19 +8,29 @@ import (
 
 type Configuration struct {
 	App AppConfiguration
-	// MongoDb DatabaseConfiguration
+	DB  DatabaseDriver
 	Api ApiConfig
 	Log LogConfig
 }
 
 type AppConfiguration struct {
-	Env   string
-	Port  int
-	Debug bool
+	Env       string
+	Debug     bool
+	InitialDB bool
+}
+
+type DatabaseDriver struct {
+	Oracle DatabaseConfiguration
+	Mysql  DatabaseConfiguration
 }
 
 type DatabaseConfiguration struct {
-	Connection string
+	Url         string
+	Port        int
+	ServiceName string
+	Username    string
+	Password    string
+	TableName   string
 }
 
 type LogConfig struct {
