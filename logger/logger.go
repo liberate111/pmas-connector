@@ -22,7 +22,7 @@ func InitLog() {
 	}
 	handler := slog.NewJSONHandler(os.Stdout, opts)
 	Logger = slog.New(handler)
-	Logger.Debug("Initial logger")
-	Logger.Debug("Initial config", "config", config.Config)
+	Logger.Info("Initial logger")
+	Logger.Info("Initial config", "config", config.Config)
 	Logger.Info("Start PMAS-CONNECTOR Application...")
 }

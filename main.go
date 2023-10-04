@@ -116,15 +116,17 @@ type TagStatus string
 const NUM_RED TagStatus = "14"
 const NUM_YELLOW TagStatus = "13"
 const NUM_GREEN TagStatus = "12"
-const NUM_MAGENTA TagStatus = "11"
-const NUM_PINK TagStatus = "2"
+const NUM_BLUE TagStatus = "11"
+const NUM_MAGENTA TagStatus = "2"
 const NUM_GREY TagStatus = "1"
 const STATUS_RED TagStatus = "RED"
 const STATUS_YELLOW TagStatus = "YELLOW"
 const STATUS_GREEN TagStatus = "GREEN"
 const STATUS_MAGENTA TagStatus = "MAGENTA"
-const STATUS_PINK TagStatus = "PINK"
+const STATUS_BLUE TagStatus = "BLUE"
 const STATUS_GREY TagStatus = "GREY"
+
+const SUCCESS string = "success"
 
 func init() {
 	var err error
@@ -142,7 +144,7 @@ func init() {
 }
 
 func main() {
-	time.Sleep(1 * time.Minute)
+	// time.Sleep(1 * time.Minute)
 	// cronjob()
 }
 
@@ -155,21 +157,30 @@ func gracefulShutdown(done chan bool) {
 
 		<-c
 		logger.Logger.Info("Application shutdown...")
+		err := conn.Close()
+		if err != nil {
+			logger.Logger.Error("close db connection", "error", err.Error())
+		}
 		done <- true
 	}()
 }
 
 func cronjob() {
-	localTime, _ := time.LoadLocation("Asia/Bangkok")
+	localTime, err := time.LoadLocation("Asia/Bangkok")
+	if err != nil {
+		logger.Logger.Error("crontask load local time", "error", err.Error())
+		os.Exit(1)
+	}
 	c := cron.New(cron.WithLocation(localTime))
 
+	// ===================== ALL SITE ======================================
 	// chn-c2
 	// c.AddFunc("@midnight", chn_c2)
 	// for test
-	c.AddFunc("@every 30s", chn_c2)
+	c.AddFunc("@every 30s", updateBySite)
 
 	// other site
-	//
+	// ===================== ALL SITE ======================================
 
 	c.Start()
 	done := make(chan bool, 1)
@@ -178,7 +189,7 @@ func cronjob() {
 	defer c.Stop()
 }
 
-func chn_c2() {
+func updateBySite() {
 	ConnectAPI()
 	respBody, err := GetDataAPI()
 	if err != nil {
@@ -191,11 +202,11 @@ func chn_c2() {
 	}
 	logger.Logger.Debug("result data", "data", tagData)
 
-	// business logic
-	err = checkStatus(tagData)
+	err = updateStatus(tagData)
 	if err != nil {
 		logger.Logger.Error("check status", "error", err.Error())
 	}
+	logger.Logger.Info("site", "status", SUCCESS)
 }
 
 func InitClient() {
@@ -229,6 +240,7 @@ func ConnectAPI() {
 		logger.Logger.Error("connect API", "error", err.Error())
 	}
 	logger.Logger.Debug("connect API", slog.Group("response", slog.Int("status", resp.StatusCode()), slog.Duration("response time", resp.Time()), slog.String("response body", resp.String())))
+	logger.Logger.Info("connect API", "status", SUCCESS)
 }
 
 func GetDataAPI() ([]byte, error) {
@@ -278,6 +290,7 @@ func GetDataAPI() ([]byte, error) {
 		return v, fmt.Errorf("request error %w", err)
 	}
 	logger.Logger.Debug("get data API", slog.Group("response", slog.Int("status", resp.StatusCode()), slog.Duration("response time", resp.Time()), slog.String("response body", resp.String())))
+	logger.Logger.Info("get data API", "status", SUCCESS)
 	return resp.Body(), err
 }
 
@@ -291,21 +304,53 @@ func ParseXML(data []byte) (Response, error) {
 	return resp, err
 }
 
-func checkStatus(r Response) error {
+func updateStatus(r Response) error {
+	// stmt
+	sql := fmt.Sprintf(`UPDATE %s SET STATUS = :1, SFROM = :2, "TimeStamp" = :3 WHERE KPI_TAG = :4`, config.Config.DB.Oracle.TableName)
+	updStmt, err := conn.Prepare(sql)
+	if err != nil {
+		logger.Logger.Error("update to db", "error", err.Error())
+	}
+
+	defer func() {
+		_ = updStmt.Close()
+	}()
+
+	var sform, status string
+	var tsz time.Time
+	tsz, err = timestamptz()
+	if err != nil {
+		logger.Logger.Error("update to db", "error", err.Error())
+	}
 	// tags loop
 	for _, v := range r.SoapBody.Resp.ResultData {
 		if len(v.Data.TimeDataItem) != 2 {
-			logger.Logger.Error("check status", "error", "status value greater than 2", "tag", v.TagData.Name)
+			logger.Logger.Error("update to db", "error", "length of Data is not equal to 2", "tag", v.TagData.Name)
 			continue
 		}
 		if v.Data.TimeDataItem[0].Value == v.Data.TimeDataItem[1].Value {
-			logger.Logger.Debug("status not change", "tag", v.TagData.Name)
+			logger.Logger.Debug("update to db", "tag", v.TagData.Name, "check status", "status not change")
 			continue
 		}
-		// status change
-		// update to DB
-		logger.Logger.Debug("update to db")
+
+		// update
+		sform, err = convertStatus(v.Data.TimeDataItem[0].Value)
+		if err != nil {
+			logger.Logger.Error("update to db", "error", err.Error())
+			continue
+		}
+		status, err = convertStatus(v.Data.TimeDataItem[1].Value)
+		if err != nil {
+			logger.Logger.Error("update to db", "error", err.Error())
+			continue
+		}
+
+		_, err = updStmt.Exec([]driver.Value{status, sform, go_ora.TimeStampTZ(tsz), v.TagData.Name})
+		if err != nil {
+			logger.Logger.Error("update to db", "error", err.Error())
+		}
 	}
+	logger.Logger.Info("update to db", "status", SUCCESS)
 	return nil
 }
 
@@ -322,6 +367,7 @@ func ConnectOracleDB() (*go_ora.Connection, error) {
 		logger.Logger.Error("connect to db", "error", err.Error())
 		return nil, err
 	}
+	logger.Logger.Info("connect to db", "status", SUCCESS)
 	return conn, nil
 }
 
@@ -340,7 +386,6 @@ func InitTable() {
 	logger.Logger.Debug("result data", "data", tagData)
 
 	// DB
-	t := time.Now()
 	sql := fmt.Sprintf(`UPDATE %s SET STATUS = :1, SFROM = :2, "TimeStamp" = :3 WHERE KPI_TAG = :4`, config.Config.DB.Oracle.TableName)
 	updStmt, err := conn.Prepare(sql)
 	if err != nil {
@@ -353,8 +398,12 @@ func InitTable() {
 
 	var sform, status string
 	var tsz time.Time
+	tsz, err = timestamptz()
+	if err != nil {
+		logger.Logger.Error("initial data in table", "error", err.Error())
+	}
 
-	for i, v := range tagData.SoapBody.Resp.ResultData {
+	for _, v := range tagData.SoapBody.Resp.ResultData {
 		sform, err = convertStatus(v.Data.TimeDataItem[0].Value)
 		if err != nil {
 			logger.Logger.Error("initial data in table", "error", err.Error())
@@ -365,17 +414,12 @@ func InitTable() {
 			logger.Logger.Error("initial data in table", "error", err.Error())
 			continue
 		}
-		tsz, err = timestamptz()
-		if err != nil {
-			logger.Logger.Error("initial data in table", "error", err.Error())
-			continue
-		}
+
 		_, err = updStmt.Exec([]driver.Value{status, sform, go_ora.TimeStampTZ(tsz), v.TagData.Name})
 		if err != nil {
 			logger.Logger.Error("initial data in table", "error", err.Error())
 		}
-		fmt.Println("time: ", tsz.String())
-		fmt.Println("Finish update: ", time.Now().Sub(t), "----", i)
+		logger.Logger.Info("initail table", "status", SUCCESS)
 	}
 }
 
@@ -388,8 +432,8 @@ func convertStatus(num string) (string, error) {
 		return string(STATUS_GREEN), nil
 	} else if num == string(NUM_MAGENTA) {
 		return string(STATUS_MAGENTA), nil
-	} else if num == string(NUM_PINK) {
-		return string(STATUS_PINK), nil
+	} else if num == string(NUM_BLUE) {
+		return string(STATUS_BLUE), nil
 	} else if num == string(NUM_GREY) {
 		return string(STATUS_GREY), nil
 	}
