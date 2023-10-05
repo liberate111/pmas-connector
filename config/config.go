@@ -17,11 +17,13 @@ type AppConfiguration struct {
 	Env       string
 	Debug     bool
 	InitialDB bool
+	DB        string
 }
 
 type DatabaseDriver struct {
-	Oracle DatabaseConfiguration
-	Mysql  DatabaseConfiguration
+	Oracle    DatabaseConfiguration
+	Mysql     DatabaseConfiguration
+	Sqlserver DatabaseConfiguration
 }
 
 type DatabaseConfiguration struct {
