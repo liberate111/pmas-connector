@@ -5,6 +5,8 @@ import (
 	"encoding/xml"
 	"fmt"
 	"time"
+
+	go_ora "github.com/sijms/go-ora/v2"
 )
 
 type TagStatus string
@@ -32,7 +34,7 @@ func ParseXML(data []byte) (model.Response, error) {
 	return resp, err
 }
 
-func convertStatus(num string) (string, error) {
+func ConvertStatus(num string) (string, error) {
 	if num == string(NUM_RED) {
 		return string(STATUS_RED), nil
 	} else if num == string(NUM_YELLOW) {
@@ -49,12 +51,12 @@ func convertStatus(num string) (string, error) {
 	return "", fmt.Errorf("error not match any status type: %v", num)
 }
 
-func timestamptz() (time.Time, error) {
+func Timestamptz() (go_ora.TimeStampTZ, error) {
 	t := time.Now()
 	loc := "Asia/Bangkok"
 	zoneLoc, err := time.LoadLocation(loc)
 	if err != nil {
-		return t, err
+		return go_ora.TimeStampTZ{}, err
 	}
-	return t.In(zoneLoc), nil
+	return go_ora.TimeStampTZ(t.In(zoneLoc)), nil
 }

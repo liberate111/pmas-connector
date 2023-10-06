@@ -11,8 +11,8 @@ import (
 	"gorm.io/gorm"
 )
 
-var connOracle *go_ora.Connection
-var connSqlserver *gorm.DB
+var ConnOracle *go_ora.Connection
+var ConnSqlserver *gorm.DB
 
 const (
 	ORACLE_DB    string = "oracle"
@@ -25,12 +25,12 @@ func ConnectDB() error {
 	dbConfig := config.Config.DB
 	if driver == ORACLE_DB {
 		connStr := go_ora.BuildUrl(dbConfig.Oracle.Url, dbConfig.Oracle.Port, dbConfig.Oracle.ServiceName, dbConfig.Oracle.Username, dbConfig.Oracle.Password, nil)
-		connOracle, err = go_ora.NewConnection(connStr)
+		ConnOracle, err = go_ora.NewConnection(connStr)
 		if err != nil {
 			logger.Logger.Error("connect to db", "error", err.Error())
 			return err
 		}
-		err = connOracle.Open()
+		err = ConnOracle.Open()
 		if err != nil {
 			logger.Logger.Error("connect to db", "error", err.Error())
 			return err
@@ -40,7 +40,7 @@ func ConnectDB() error {
 	} else if driver == SQLSERVER_DB {
 		// TODO : connect db
 		dsn := "sqlserver://gorm:LoremIpsum86@localhost:9930?database=gorm"
-		connSqlserver, err = gorm.Open(sqlserver.Open(dsn), &gorm.Config{})
+		ConnSqlserver, err = gorm.Open(sqlserver.Open(dsn), &gorm.Config{})
 		return nil
 	} else {
 		return fmt.Errorf("driver database not support: %v", driver)
@@ -50,7 +50,7 @@ func ConnectDB() error {
 func CloseDB() {
 	driver := config.Config.App.DB
 	if driver == ORACLE_DB {
-		err := connOracle.Close()
+		err := ConnOracle.Close()
 		if err != nil {
 			logger.Logger.Error("close db connection", "error", err.Error())
 		}
