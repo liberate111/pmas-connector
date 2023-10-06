@@ -1,6 +1,7 @@
 package service
 
 import (
+	"app-connector/config"
 	"app-connector/constant"
 	"app-connector/controller"
 	"app-connector/logger"
@@ -8,7 +9,16 @@ import (
 	"app-connector/util"
 )
 
-func UpdateBySite(reqCon, reqGet model.RequestApi) {
+func InitTable() {
+	// loop for all site here
+
+	// manual
+	reqCon := config.Config.Api.Connect
+	reqGet := config.Config.Api.GetData
+	initBySite(reqCon, reqGet)
+}
+
+func initBySite(reqCon, reqGet model.RequestApi) {
 	err := controller.ConnectAPI(reqCon)
 	if err != nil {
 		logger.Logger.Error("connect API", "error", err.Error())
@@ -25,7 +35,7 @@ func UpdateBySite(reqCon, reqGet model.RequestApi) {
 	}
 	// logger.Logger.Debug("result data", "data", tagData)
 
-	err = updateStatus(tagData)
+	err = initStatus(tagData)
 	if err != nil {
 		logger.Logger.Error("update status", "error", err.Error())
 		return
@@ -33,7 +43,7 @@ func UpdateBySite(reqCon, reqGet model.RequestApi) {
 	logger.Logger.Info("site", "status", constant.SUCCESS)
 }
 
-func updateStatus(r model.Response) error {
+func initStatus(r model.Response) error {
 	controller.CreateStmt()
 	var sform, status string
 	tsz, err := util.Timestamptz()
@@ -46,28 +56,28 @@ func updateStatus(r model.Response) error {
 			logger.Logger.Error("update to db", "error", "length of Data is not equal to 2", "tag", v.TagData.Name)
 			continue
 		}
-		if v.Data.TimeDataItem[0].Value == v.Data.TimeDataItem[1].Value {
-			logger.Logger.Debug("update to db", "tag", v.TagData.Name, "check status", "status not change")
-			continue
-		}
+		// if v.Data.TimeDataItem[0].Value == v.Data.TimeDataItem[1].Value {
+		// 	logger.Logger.Debug("update to db", "tag", v.TagData.Name, "check status", "status not change")
+		// 	continue
+		// }
 
 		// update
 		sform, err = util.ConvertStatus(v.Data.TimeDataItem[0].Value)
 		if err != nil {
-			logger.Logger.Error("update to db", "error", err.Error(), "tag", v.TagData.Name)
+			logger.Logger.Error("update to db", "error", err.Error())
 			continue
 		}
 		status, err = util.ConvertStatus(v.Data.TimeDataItem[1].Value)
 		if err != nil {
-			logger.Logger.Error("update to db", "error", err.Error(), "tag", v.TagData.Name)
+			logger.Logger.Error("update to db", "error", err.Error())
 			continue
 		}
 		err := controller.UpdateStatus(status, sform, v.TagData.Name, tsz)
 		if err != nil {
-			logger.Logger.Error("update to db", "error", err.Error(), "tag", v.TagData.Name)
+			logger.Logger.Error("update to db", "error", err.Error())
 		}
 	}
-	logger.Logger.Info("update to db", "status", constant.SUCCESS, "tag", "all tags")
+	logger.Logger.Info("update to db", "status", constant.SUCCESS)
 	controller.CloseStmt()
 	return nil
 }

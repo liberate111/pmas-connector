@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"app-connector/config"
 	"app-connector/constant"
 	"app-connector/logger"
 	"app-connector/model"
@@ -12,23 +11,32 @@ import (
 )
 
 // Connect API
-func ConnectAPI() {
+func ConnectAPI(req model.RequestApi) error {
 	resp, err := client.R().
-		SetBasicAuth(config.Config.Api.Connect.BasicAuth.Username, config.Config.Api.Connect.BasicAuth.Password).
-		SetHeaders(config.Config.Api.Connect.Headers).
-		SetBody(config.Config.Api.Connect.Body).
-		Post(config.Config.Api.Connect.Url)
+		SetBasicAuth(req.BasicAuth.Username, req.BasicAuth.Password).
+		SetHeaders(req.Headers).
+		SetBody(req.Body).
+		Post(req.Url)
 	if err != nil {
 		logger.Logger.Error("connect API", "error", err.Error())
+		return fmt.Errorf("connect API error %w", err)
 	}
 	logger.Logger.Debug("connect API", slog.Group("response", slog.Int("status", resp.StatusCode()), slog.Duration("response time", resp.Time()), slog.String("response body", resp.String())))
 	logger.Logger.Info("connect API", "status", constant.SUCCESS)
+	return nil
 }
 
-func GetDataAPI() ([]byte, error) {
+func GetDataAPI(req model.RequestApi) ([]byte, error) {
 	var v []byte
 	// Create request body
-	refTime := time.Now().AddDate(0, 0, -1).Format(time.RFC3339)
+	t := time.Now().AddDate(0, 0, -1)
+	loc := "Asia/Bangkok"
+	zoneLoc, err := time.LoadLocation(loc)
+	if err != nil {
+		return nil, err
+	}
+	refTime := t.In(zoneLoc).Format(time.RFC3339)
+
 	body := model.SOAPEnvelope{
 		Body: model.SOAPBody{
 			GetSRxData: model.GetSRxData{
@@ -45,11 +53,11 @@ func GetDataAPI() ([]byte, error) {
 		Soap: "http://schemas.xmlsoap.org/soap/envelope/",
 	}
 
-	if len(config.Config.Api.GetData.Tags) == 0 {
+	if len(req.Tags) == 0 {
 		return v, fmt.Errorf("length of tag is equal to zero")
 	}
 	var tags model.Tags
-	for _, v := range config.Config.Api.GetData.Tags {
+	for _, v := range req.Tags {
 		tags.SRxTag = append(tags.SRxTag, model.SRxTag{Name: v})
 	}
 	body.Body.GetSRxData.Tags = tags
@@ -64,10 +72,10 @@ func GetDataAPI() ([]byte, error) {
 
 	// Get data API
 	resp, err := client.R().
-		SetBasicAuth(config.Config.Api.GetData.BasicAuth.Username, config.Config.Api.GetData.BasicAuth.Password).
-		SetHeaders(config.Config.Api.GetData.Headers).
+		SetBasicAuth(req.BasicAuth.Username, req.BasicAuth.Password).
+		SetHeaders(req.Headers).
 		SetBody(xmlBody).
-		Post(config.Config.Api.GetData.Url)
+		Post(req.Url)
 	if err != nil {
 		return v, fmt.Errorf("request error %w", err)
 	}

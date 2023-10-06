@@ -28,7 +28,9 @@ func Cronjob() {
 	// ===================== ALL SITE ======================================
 
 	// manual
-	UpdateBySite()
+	// reqCon := config.Config.Api.Connect
+	// reqGet := config.Config.Api.GetData
+	// UpdateBySite(reqCon, reqGet)
 
 	c.Start()
 	done := make(chan bool, 1)
