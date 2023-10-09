@@ -7,6 +7,7 @@ import (
 	"app-connector/model"
 	"database/sql/driver"
 	"fmt"
+	"time"
 
 	go_ora "github.com/sijms/go-ora/v2"
 	"gorm.io/driver/sqlserver"
@@ -45,9 +46,12 @@ func ConnectDB() error {
 		logger.Logger.Info("connect to db", "status", constant.SUCCESS)
 		return nil
 	} else if Driver == SQLSERVER_DB {
-		// TODO : connect db
-		dsn := "sqlserver://gorm:LoremIpsum86@localhost:9930?database=gorm"
+		dsn := dbConfig.Sqlserver.Url
 		ConnSqlserver, err = gorm.Open(sqlserver.Open(dsn), &gorm.Config{})
+		if err != nil {
+			logger.Logger.Error("connect to db", "error", err.Error())
+			return err
+		}
 		return nil
 	} else {
 		return fmt.Errorf("driver database not support: %v", Driver)
@@ -61,28 +65,20 @@ func CloseDB() {
 			logger.Logger.Error("close db connection", "error", err.Error())
 		}
 	}
-	if Driver == SQLSERVER_DB {
-		// TODO : disconnect db
-
-	}
+	// if Driver == SQLSERVER_DB {
+	// 	// lib::misused
+	// }
 }
 
 func CreateStmt() error {
 	if Driver == ORACLE_DB {
 		// stmt
 		sql := fmt.Sprintf(`UPDATE %s SET STATUS = :1, SFROM = :2, "TimeStamp" = :3 WHERE KPI_TAG = :4`, dbConfig.Oracle.TableName)
-		// updStmt, err := ConnOracle.Prepare(sql)
-		// if err != nil {
-		// 	logger.Logger.Error("update to db", "error", err.Error())
-		// }
 		stmt = go_ora.NewStmt(sql, ConnOracle)
 		return nil
-	} else if Driver == SQLSERVER_DB {
-
 	} else {
 		return fmt.Errorf("driver database not support: %v", Driver)
 	}
-	return nil
 }
 
 func CloseStmt() {
@@ -98,7 +94,11 @@ func UpdateStatus(status, sform, tag string, tsz go_ora.TimeStampTZ) error {
 			logger.Logger.Error("update to db", "error", err.Error())
 		}
 	} else if Driver == SQLSERVER_DB {
-
+		whcl := "KPI_TAG = ?"
+		tx := ConnSqlserver.Table(dbConfig.Sqlserver.TableName).Where(whcl, tag).Updates(model.KpiTag{Status: status, Sfrom: sform, TimeStamp: time.Time(tsz)})
+		if tx.Error != nil {
+			logger.Logger.Error("update to db", "error", tx.Error.Error())
+		}
 	} else {
 		return fmt.Errorf("driver database not support: %v", Driver)
 	}

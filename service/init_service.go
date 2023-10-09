@@ -56,10 +56,6 @@ func initStatus(r model.Response) error {
 			logger.Logger.Error("update to db", "error", "length of Data is not equal to 2", "tag", v.TagData.Name)
 			continue
 		}
-		// if v.Data.TimeDataItem[0].Value == v.Data.TimeDataItem[1].Value {
-		// 	logger.Logger.Debug("update to db", "tag", v.TagData.Name, "check status", "status not change")
-		// 	continue
-		// }
 
 		// update
 		sform, err = util.ConvertStatus(v.Data.TimeDataItem[0].Value)
