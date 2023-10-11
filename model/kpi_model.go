@@ -3,15 +3,15 @@ package model
 import "time"
 
 type KpiTag struct {
-	Point       int       `gorm:"column:POINT"`
+	Point       int       `gorm:"column:Point"`
 	Group       string    `gorm:"column:Group"`
-	Description string    `gorm:"column:DESCRIPTION"`
-	KpiTag      string    `gorm:"column:KPI_TAG"`
-	TagRaw      string    `gorm:"column:TAG_RAW"`
-	Craft       string    `gorm:"column:CRAFT"`
-	Status      string    `gorm:"column:STATUS"`
-	Meter       string    `gorm:"column:METER"`
-	Location    string    `gorm:"column:LOCATION"`
-	Sfrom       string    `gorm:"column:SFROM"`
+	Description string    `gorm:"column:Description"`
+	KpiTag      string    `gorm:"column:KPI_Tag"`
+	TagRaw      string    `gorm:"column:Tag_Raw"`
+	Craft       string    `gorm:"column:Craft"`
+	Status      string    `gorm:"column:Status"`
+	Meter       string    `gorm:"column:Meter"`
+	Location    string    `gorm:"column:Location"`
+	Sfrom       string    `gorm:"column:SFrom"`
 	TimeStamp   time.Time `gorm:"column:TimeStamp"`
 }
