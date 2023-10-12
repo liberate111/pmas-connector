@@ -30,7 +30,8 @@ func Cronjob() {
 	// manual
 	// reqCon := config.Config.Api.Connect
 	// reqGet := config.Config.Api.GetData
-	// UpdateBySite(reqCon, reqGet)
+	// table := config.Config.TableName
+	// UpdateBySite(reqCon, reqGet, table)
 
 	c.Start()
 	done := make(chan bool, 1)

@@ -51,12 +51,22 @@ func ConvertStatus(num string) (string, error) {
 	return "", fmt.Errorf("error not match any status type: %v", num)
 }
 
-func Timestamptz() (go_ora.TimeStampTZ, error) {
+func Timestampt() (time.Time, error) {
 	t := time.Now()
 	loc := "Asia/Bangkok"
 	zoneLoc, err := time.LoadLocation(loc)
 	if err != nil {
-		return go_ora.TimeStampTZ{}, err
+		return t, err
 	}
-	return go_ora.TimeStampTZ(t.In(zoneLoc)), nil
+	return t.In(zoneLoc), nil
+}
+
+// Oracle data type TimeStamp
+func Timestamptz(t time.Time) go_ora.TimeStampTZ {
+	return go_ora.TimeStampTZ(t)
+}
+
+// MS SQL Sever data type DateTime
+func FormatDatetime(t time.Time) string {
+	return t.Format(time.DateTime)
 }

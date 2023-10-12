@@ -5,6 +5,7 @@ import (
 	"app-connector/constant"
 	"app-connector/logger"
 	"app-connector/model"
+	"app-connector/util"
 	"database/sql/driver"
 	"fmt"
 	"time"
@@ -70,10 +71,10 @@ func CloseDB() {
 	// }
 }
 
-func CreateStmt() error {
+func CreateStmt(table string) error {
 	if Driver == ORACLE_DB {
 		// stmt
-		sql := fmt.Sprintf(`UPDATE %s SET STATUS = :1, SFROM = :2, "TimeStamp" = :3 WHERE KPI_TAG = :4`, dbConfig.Oracle.TableName)
+		sql := fmt.Sprintf(`UPDATE %s SET Status = :1, SFrom = :2, "TimeStamp" = :3 WHERE ALM_Tag = :4`, table)
 		stmt = go_ora.NewStmt(sql, ConnOracle)
 		return nil
 	} else {
@@ -87,15 +88,17 @@ func CloseStmt() {
 	}
 }
 
-func UpdateStatus(status, sform, tag string, tsz go_ora.TimeStampTZ) error {
+func UpdateStatus(status, sform, tag string, t time.Time, table string) error {
 	if Driver == ORACLE_DB {
+		tsz := util.Timestamptz(t)
 		_, err := stmt.Exec([]driver.Value{status, sform, tsz, tag})
 		if err != nil {
 			logger.Logger.Error("update to db", "error", err.Error())
 		}
 	} else if Driver == SQLSERVER_DB {
-		whcl := "KPI_TAG = ?"
-		tx := ConnSqlserver.Table(dbConfig.Sqlserver.TableName).Where(whcl, tag).Updates(model.KpiTag{Status: status, Sfrom: sform, TimeStamp: time.Time(tsz)})
+		whcl := "ALM_Tag = ?"
+		data := map[string]interface{}{"Status": status, "SFrom": sform, "TimeStamp": util.FormatDatetime(t)}
+		tx := ConnSqlserver.Table(table).Where(whcl, tag).Updates(data)
 		if tx.Error != nil {
 			logger.Logger.Error("update to db", "error", tx.Error.Error())
 		}

@@ -15,10 +15,11 @@ func InitTable() {
 	// manual
 	reqCon := config.Config.Api.Connect
 	reqGet := config.Config.Api.GetData
-	initBySite(reqCon, reqGet)
+	table := config.Config.TableName
+	initBySite(reqCon, reqGet, table)
 }
 
-func initBySite(reqCon, reqGet model.RequestApi) {
+func initBySite(reqCon, reqGet model.RequestApi, table string) {
 	err := controller.ConnectAPI(reqCon)
 	if err != nil {
 		logger.Logger.Error("connect API", "error", err.Error())
@@ -35,7 +36,7 @@ func initBySite(reqCon, reqGet model.RequestApi) {
 	}
 	// logger.Logger.Debug("result data", "data", tagData)
 
-	err = initStatus(tagData)
+	err = initStatus(tagData, table)
 	if err != nil {
 		logger.Logger.Error("update status", "error", err.Error())
 		return
@@ -43,15 +44,19 @@ func initBySite(reqCon, reqGet model.RequestApi) {
 	logger.Logger.Info("site", "status", constant.SUCCESS)
 }
 
-func initStatus(r model.Response) error {
-	controller.CreateStmt()
+func initStatus(r model.Response, table string) error {
+	controller.CreateStmt(table)
 	var sform, status string
-	tsz, err := util.Timestamptz()
+	tsz, err := util.Timestampt()
 	if err != nil {
 		logger.Logger.Error("update to db", "error", err.Error())
 	}
 	// tags loop
 	for _, v := range r.SoapBody.Resp.ResultData {
+		if v.State.IsValid == constant.STATE_FALSE {
+			logger.Logger.Error("update to db", "error", "response data from API state is not valid", "tag", v.TagData.Name)
+			continue
+		}
 		if len(v.Data.TimeDataItem) != 2 {
 			logger.Logger.Error("update to db", "error", "length of Data is not equal to 2", "tag", v.TagData.Name)
 			continue
@@ -68,7 +73,7 @@ func initStatus(r model.Response) error {
 			logger.Logger.Error("update to db", "error", err.Error())
 			continue
 		}
-		err := controller.UpdateStatus(status, sform, v.TagData.Name, tsz)
+		err := controller.UpdateStatus(status, sform, v.TagData.Name, tsz, table)
 		if err != nil {
 			logger.Logger.Error("update to db", "error", err.Error())
 		}

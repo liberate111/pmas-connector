@@ -1,5 +1,6 @@
 package constant
 
 const (
-	SUCCESS string = "success"
+	SUCCESS     string = "success"
+	STATE_FALSE string = "false"
 )

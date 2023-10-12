@@ -7,6 +7,7 @@ type KpiTag struct {
 	Group       string    `gorm:"column:Group"`
 	Description string    `gorm:"column:Description"`
 	KpiTag      string    `gorm:"column:KPI_Tag"`
+	AlmTag      string    `gorm:"column:ALM_Tag"`
 	TagRaw      string    `gorm:"column:Tag_Raw"`
 	Craft       string    `gorm:"column:Craft"`
 	Status      string    `gorm:"column:Status"`

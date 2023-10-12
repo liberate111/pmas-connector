@@ -1,10 +1,11 @@
 package model
 
 type Configuration struct {
-	App AppConfiguration
-	DB  DatabaseDriver
-	Api ApiConfig
-	Log LogConfig
+	App       AppConfiguration
+	DB        DatabaseDriver
+	Log       LogConfig
+	Api       ApiConfig
+	TableName string
 }
 
 type AppConfiguration struct {
@@ -26,7 +27,7 @@ type DatabaseConfiguration struct {
 	ServiceName string
 	Username    string
 	Password    string
-	TableName   string
+	// TableName   string
 }
 
 type LogConfig struct {
