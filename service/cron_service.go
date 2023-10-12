@@ -1,8 +1,10 @@
 package service
 
 import (
+	"app-connector/config"
 	"app-connector/controller"
 	"app-connector/logger"
+	"log"
 	"os"
 	"time"
 
@@ -16,24 +18,19 @@ func Cronjob() {
 		os.Exit(1)
 	}
 	c := cron.New(cron.WithLocation(localTime))
-
-	// schedule
-	// ===================== ALL SITE ======================================
-	// chn-c2
-	// c.AddFunc("@midnight", service.UpdateBySite)
-	// for test
-	// c.AddFunc("@every 30s", updateBySite)
-
-	// other site
-	// ===================== ALL SITE ======================================
-
-	// manual
-	// reqCon := config.Config.Api.Connect
-	// reqGet := config.Config.Api.GetData
-	// table := config.Config.TableName
-	// UpdateBySite(reqCon, reqGet, table)
-
 	c.Start()
+
+	site := config.Config.Site
+
+	for _, v := range site {
+		v := v
+		log.Println("site v", v.Name)
+		c.AddFunc(config.Config.App.Schedule, func() {
+			log.Println("site v add func", v.Name)
+			// UpdateBySite(v)
+		})
+	}
+
 	done := make(chan bool, 1)
 	controller.GracefulShutdown(done)
 	<-done

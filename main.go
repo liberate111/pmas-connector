@@ -17,12 +17,11 @@ func init() {
 		logger.Logger.Error("connect to db", "error", err.Error())
 		os.Exit(1)
 	}
-
-	if config.Config.App.InitialDB {
-		service.InitTable()
-	}
 }
 
 func main() {
+	if config.Config.App.InitialDB {
+		service.InitTable()
+	}
 	service.Cronjob()
 }

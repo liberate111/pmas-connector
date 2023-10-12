@@ -100,7 +100,7 @@ func UpdateStatus(status, sform, tag string, t time.Time, table string) error {
 		data := map[string]interface{}{"Status": status, "SFrom": sform, "TimeStamp": util.FormatDatetime(t)}
 		tx := ConnSqlserver.Table(table).Where(whcl, tag).Updates(data)
 		if tx.Error != nil {
-			logger.Logger.Error("update to db", "error", tx.Error.Error())
+			logger.Logger.Error("update to db", "error", tx.Error.Error(), "tag", tag)
 		}
 	} else {
 		return fmt.Errorf("driver database not support: %v", Driver)
