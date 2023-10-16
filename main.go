@@ -14,7 +14,7 @@ func init() {
 	controller.InitClient()
 	err := controller.ConnectDB()
 	if err != nil {
-		logger.Logger.Error("connect to db", "error", err.Error())
+		logger.Error("connect to db", "error", err.Error())
 		os.Exit(1)
 	}
 }

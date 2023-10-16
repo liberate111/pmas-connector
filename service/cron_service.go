@@ -4,7 +4,6 @@ import (
 	"app-connector/config"
 	"app-connector/controller"
 	"app-connector/logger"
-	"log"
 	"os"
 	"time"
 
@@ -14,7 +13,7 @@ import (
 func Cronjob() {
 	localTime, err := time.LoadLocation("Asia/Bangkok")
 	if err != nil {
-		logger.Logger.Error("crontask load local time", "error", err.Error())
+		logger.Error("cron task load local time", "error", err.Error())
 		os.Exit(1)
 	}
 	c := cron.New(cron.WithLocation(localTime))
@@ -24,10 +23,8 @@ func Cronjob() {
 
 	for _, v := range site {
 		v := v
-		log.Println("site v", v.Name)
 		c.AddFunc(config.Config.App.Schedule, func() {
-			log.Println("site v add func", v.Name)
-			// UpdateBySite(v)
+			UpdateBySite(v)
 		})
 	}
 

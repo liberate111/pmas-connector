@@ -2,27 +2,55 @@ package logger
 
 import (
 	"app-connector/config"
-	"log/slog"
-	"os"
+
+	"github.com/gookit/slog"
+	"github.com/gookit/slog/handler"
 )
 
-var Logger *slog.Logger
-
 func InitLog() {
-	var opts *slog.HandlerOptions
+	slog.Configure(func(logger *slog.SugaredLogger) {
+		f := logger.Formatter.(*slog.TextFormatter)
+		f.EnableColor = true
+	})
+
+	var h *handler.SyncCloseHandler
 	if config.Config.Log.Level == "debug" {
-		opts = &slog.HandlerOptions{
-			AddSource: true,
-			Level:     slog.LevelDebug,
-		}
+		h = handler.MustFileHandler("./log/pmas-connector-debug.log",
+			handler.WithLogLevels(slog.AllLevels),
+			handler.WithMaxSize(10485760),
+			handler.WithRotateTime(2629746),
+		)
 	} else {
-		opts = &slog.HandlerOptions{
-			Level: slog.LevelInfo,
-		}
+		h = handler.MustFileHandler("./log/pmas-connector-info.log",
+			handler.WithLogLevels(slog.Levels{slog.InfoLevel, slog.ErrorLevel, slog.FatalLevel}),
+			handler.WithMaxSize(10485760),
+			handler.WithRotateTime(2629746),
+		)
 	}
-	handler := slog.NewJSONHandler(os.Stdout, opts)
-	Logger = slog.New(handler)
-	Logger.Info("Initial logger")
-	Logger.Debug("Initial config", "config", config.Config)
-	Logger.Info("Start PMAS-CONNECTOR Application...")
+
+	slog.PushHandler(h)
+
+	Info("Initial logger")
+	Debug("Initial config", "config", config.Config)
+	Info("Start PMAS-CONNECTOR Application...")
+}
+
+func Info(args ...any) {
+	slog.Info(args)
+}
+
+func Error(args ...any) {
+	slog.Error(args)
+}
+
+func Warn(args ...any) {
+	slog.Warn(args)
+}
+
+func Fatal(args ...any) {
+	slog.Fatal(args)
+}
+
+func Debug(args ...any) {
+	slog.Debug(args)
 }

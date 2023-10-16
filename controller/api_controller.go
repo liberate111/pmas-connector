@@ -18,11 +18,11 @@ func ConnectAPI(req model.RequestApi) error {
 		SetBody(req.Body).
 		Post(req.Url)
 	if err != nil {
-		logger.Logger.Error("connect API", "error", err.Error())
+		logger.Error("connect API", "error", err.Error())
 		return fmt.Errorf("connect API error %w", err)
 	}
-	logger.Logger.Debug("connect API", slog.Group("response", slog.Int("status", resp.StatusCode()), slog.Duration("response time", resp.Time()), slog.String("response body", resp.String())))
-	logger.Logger.Info("connect API", "status", constant.SUCCESS)
+	logger.Debug("connect API", slog.Group("response", slog.Int("status", resp.StatusCode()), slog.Duration("response time", resp.Time()), slog.String("response body", resp.String())))
+	logger.Info("connect API", "status", constant.SUCCESS)
 	return nil
 }
 
@@ -61,14 +61,14 @@ func GetDataAPI(req model.RequestApi) ([]byte, error) {
 		tags.SRxTag = append(tags.SRxTag, model.SRxTag{Name: v})
 	}
 	body.Body.GetSRxData.Tags = tags
-	logger.Logger.Debug("get data API", slog.Group("request body", body))
+	logger.Debug("get data API", slog.Group("request body", body))
 
 	// Encoding XML
 	xmlBody, err := xml.Marshal(body)
 	if err != nil {
 		return v, fmt.Errorf("xml encoding error %w", err)
 	}
-	logger.Logger.Debug("get data API", "xml request body", string(xmlBody))
+	logger.Debug("get data API", "xml request body", string(xmlBody))
 
 	// Get data API
 	resp, err := client.R().
@@ -79,7 +79,7 @@ func GetDataAPI(req model.RequestApi) ([]byte, error) {
 	if err != nil {
 		return v, fmt.Errorf("request error %w", err)
 	}
-	logger.Logger.Debug("get data API", slog.Group("response", slog.Int("status", resp.StatusCode()), slog.Duration("response time", resp.Time()), slog.String("response body", resp.String())))
-	logger.Logger.Info("get data API", "status", constant.SUCCESS)
+	logger.Debug("get data API", slog.Group("response", slog.Int("status", resp.StatusCode()), slog.Duration("response time", resp.Time()), slog.String("response body", resp.String())))
+	logger.Info("get data API", "status", constant.SUCCESS)
 	return resp.Body(), err
 }

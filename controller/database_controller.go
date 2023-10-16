@@ -36,21 +36,21 @@ func ConnectDB() error {
 		connStr := go_ora.BuildUrl(dbConfig.Oracle.Url, dbConfig.Oracle.Port, dbConfig.Oracle.ServiceName, dbConfig.Oracle.Username, dbConfig.Oracle.Password, nil)
 		ConnOracle, err = go_ora.NewConnection(connStr)
 		if err != nil {
-			logger.Logger.Error("connect to db", "error", err.Error())
+			logger.Error("connect to db", "error", err.Error())
 			return err
 		}
 		err = ConnOracle.Open()
 		if err != nil {
-			logger.Logger.Error("connect to db", "error", err.Error())
+			logger.Error("connect to db", "error", err.Error())
 			return err
 		}
-		logger.Logger.Info("connect to db", "status", constant.SUCCESS)
+		logger.Info("connect to db", "status", constant.SUCCESS)
 		return nil
 	} else if Driver == SQLSERVER_DB {
 		dsn := dbConfig.Sqlserver.Url
 		ConnSqlserver, err = gorm.Open(sqlserver.Open(dsn), &gorm.Config{})
 		if err != nil {
-			logger.Logger.Error("connect to db", "error", err.Error())
+			logger.Error("connect to db", "error", err.Error())
 			return err
 		}
 		return nil
@@ -63,7 +63,7 @@ func CloseDB() {
 	if Driver == ORACLE_DB {
 		err := ConnOracle.Close()
 		if err != nil {
-			logger.Logger.Error("close db connection", "error", err.Error())
+			logger.Error("close db connection", "error", err.Error())
 		}
 	}
 	// if Driver == SQLSERVER_DB {
@@ -93,14 +93,14 @@ func UpdateStatus(status, sform, tag string, t time.Time, table string) error {
 		tsz := util.Timestamptz(t)
 		_, err := stmt.Exec([]driver.Value{status, sform, tsz, tag})
 		if err != nil {
-			logger.Logger.Error("update to db", "error", err.Error())
+			logger.Error("update to db", "error", err.Error())
 		}
 	} else if Driver == SQLSERVER_DB {
 		whcl := "ALM_Tag = ?"
 		data := map[string]interface{}{"Status": status, "SFrom": sform, "TimeStamp": util.FormatDatetime(t)}
 		tx := ConnSqlserver.Table(table).Where(whcl, tag).Updates(data)
 		if tx.Error != nil {
-			logger.Logger.Error("update to db", "error", tx.Error.Error(), "tag", tag)
+			logger.Error("update to db", "error", tx.Error.Error(), "tag", tag)
 		}
 	} else {
 		return fmt.Errorf("driver database not support: %v", Driver)
