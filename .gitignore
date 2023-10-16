@@ -20,6 +20,6 @@
 # Go workspace file
 go.work
 
-result*
-ALM*
 /config/config*.yaml
+pmas-connector*
+/log
