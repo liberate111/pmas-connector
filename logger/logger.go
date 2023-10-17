@@ -2,6 +2,7 @@ package logger
 
 import (
 	"app-connector/config"
+	"app-connector/constant"
 	"fmt"
 
 	"github.com/gookit/slog"
@@ -37,6 +38,7 @@ func InitLog() {
 
 	Info("Initial logger")
 	Debug("Initial config", fmt.Sprintf("config: %+v", config.Config))
+	Info(constant.BANNER)
 	Info("Start PMAS-CONNECTOR Application...")
 }
 
