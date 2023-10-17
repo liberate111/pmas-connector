@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/go-resty/resty/v2 v2.7.0
+	github.com/gookit/slog v0.5.4
 	github.com/robfig/cron/v3 v3.0.0
 	github.com/sijms/go-ora/v2 v2.7.18
 	github.com/spf13/viper v1.16.0
@@ -18,7 +19,6 @@ require (
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/gookit/goutil v0.6.12 // indirect
 	github.com/gookit/gsr v0.1.0 // indirect
-	github.com/gookit/slog v0.5.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect

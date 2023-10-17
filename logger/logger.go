@@ -2,6 +2,7 @@ package logger
 
 import (
 	"app-connector/config"
+	"fmt"
 
 	"github.com/gookit/slog"
 	"github.com/gookit/slog/handler"
@@ -19,19 +20,23 @@ func InitLog() {
 			handler.WithLogLevels(slog.AllLevels),
 			handler.WithMaxSize(10485760),
 			handler.WithRotateTime(2629746),
+			handler.WithBackupNum(0),
+			handler.WithBackupTime(0),
 		)
 	} else {
 		h = handler.MustFileHandler("./log/pmas-connector-info.log",
 			handler.WithLogLevels(slog.Levels{slog.InfoLevel, slog.ErrorLevel, slog.FatalLevel}),
 			handler.WithMaxSize(10485760),
 			handler.WithRotateTime(2629746),
+			handler.WithBackupNum(0),
+			handler.WithBackupTime(0),
 		)
 	}
 
 	slog.PushHandler(h)
 
 	Info("Initial logger")
-	Debug("Initial config", "config", config.Config)
+	Debug("Initial config", fmt.Sprintf("config: %+v", config.Config))
 	Info("Start PMAS-CONNECTOR Application...")
 }
 
