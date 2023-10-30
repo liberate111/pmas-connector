@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"time"
+	_ "time/tzdata"
 )
 
 // Connect API

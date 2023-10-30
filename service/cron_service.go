@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	_ "time/tzdata"
+
 	"github.com/robfig/cron/v3"
 )
 

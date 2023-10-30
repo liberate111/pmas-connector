@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	_ "time/tzdata"
+
 	go_ora "github.com/sijms/go-ora/v2"
 )
 
