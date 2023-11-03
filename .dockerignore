@@ -30,3 +30,10 @@
 **/values.dev.yaml
 LICENSE
 README.md
+ 
+# bin
+/bin
+pmas-connector*
+
+# log
+/log

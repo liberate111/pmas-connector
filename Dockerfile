@@ -20,6 +20,9 @@ WORKDIR /src
 #     go mod download -x
 
 COPY go.mod go.sum ./
+RUN go mod download
+# COPY *.go ./
+COPY . ./
 
 # Build the application.
 # Leverage a cache mount to /go/pkg/mod/ to speed up subsequent builds.
