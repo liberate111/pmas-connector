@@ -80,7 +80,7 @@ WORKDIR /src
 # Copy the executable from the "build" stage.
 COPY --from=build /bin/pmas-connector /src/bin/
 
-COPY config/config.yaml config/
+# COPY config/config.yaml config/
 
 ENV TZ=Asia/Bangkok
 

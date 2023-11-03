@@ -2,6 +2,15 @@ stages:
 
 - name: Build
   steps:
+  - runScriptConfig:
+      image: busybox
+      shellScript: |
+        export ALIAS_yaml=$ALIAS_account_main
+        echo "$ALIAS_yaml" > config/config.yaml
+    envFrom:
+    - sourceName: pmas-connector-config
+      sourceKey: main
+      targetKey: ALIAS_account_main
   - publishImageConfig:
       buildContext: .
       tag: pmas-connector:${CICD_GIT_COMMIT}
