@@ -6,6 +6,7 @@ stages:
       image: busybox
       shellScript: |
         export ALIAS_yaml=$ALIAS_account_main
+        mkdir -p config
         echo "$ALIAS_yaml" > config/config.yaml
     envFrom:
     - sourceName: pmas-connector-config
