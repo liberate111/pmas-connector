@@ -1,0 +1,17 @@
+stages:
+
+- name: Build
+  steps:
+  - publishImageConfig:
+      buildContext: .
+      tag: pmas-connector:${CICD_GIT_COMMIT}
+ 
+- name: Deploy
+  steps:
+  - applyYamlConfig:
+      path: ./deployment.yaml
+ 
+branch:
+  include: [main]
+timeout: 60
+notification: {}

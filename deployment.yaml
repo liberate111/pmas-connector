@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pmas-connector
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: pmas-connector
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: pmas-connector
+    spec:
+      containers:
+        - name: pmas-connector
+          image: 127.0.0.1:34337/pmas-connector:${CICD_GIT_COMMIT}
+          imagePullPolicy: Always
+      imagePullSecrets:
+      - name: pipeline-docker-registry
