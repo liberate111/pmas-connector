@@ -25,9 +25,11 @@ COPY go.mod go.sum ./
 # Leverage a cache mount to /go/pkg/mod/ to speed up subsequent builds.
 # Leverage a bind mount to the current directory to avoid having to copy the
 # source code into the container.
-RUN --mount=type=cache,target=/go/pkg/mod/ \
-    --mount=type=bind,target=. \
-    CGO_ENABLED=0 go build -o /bin/pmas-connector .
+# RUN --mount=type=cache,target=/go/pkg/mod/ \
+#     --mount=type=bind,target=. \
+#     CGO_ENABLED=0 go build -o /bin/pmas-connector .
+
+RUN CGO_ENABLED=0 go build -o /bin/pmas-connector .
 
 ################################################################################
 # Create a new stage for running the application that contains the minimal
