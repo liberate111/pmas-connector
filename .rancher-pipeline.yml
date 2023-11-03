@@ -7,7 +7,7 @@ stages:
       shellScript: |
         export ALIAS_yaml=$ALIAS_account_main
         mkdir -p config
-        echo "$ALIAS_yaml" > config/config.yaml
+        echo "$ALIAS_yaml" > config.yaml
     envFrom:
     - sourceName: pmas-connector-config
       sourceKey: main
@@ -15,6 +15,7 @@ stages:
   - publishImageConfig:
       buildContext: .
       tag: pmas-connector:${CICD_GIT_COMMIT}
+      dockerfilePath: ./Dockerfile.test-config
  
 - name: Deploy
   steps:
