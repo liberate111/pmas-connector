@@ -66,19 +66,13 @@ func CloseDB() {
 			logger.Error("close db connection", "error", err.Error())
 		}
 	}
-	// if Driver == SQLSERVER_DB {
-	// 	// lib::misused
-	// }
 }
 
-func CreateStmt(table string) error {
+func CreateStmt(table string) {
 	if Driver == ORACLE_DB {
 		// stmt
 		sql := fmt.Sprintf(`UPDATE %s SET Status = :1, SFrom = :2, "TimeStamp" = :3 WHERE ALM_Tag = :4`, table)
 		stmt = go_ora.NewStmt(sql, ConnOracle)
-		return nil
-	} else {
-		return fmt.Errorf("driver database not support: %v", Driver)
 	}
 }
 

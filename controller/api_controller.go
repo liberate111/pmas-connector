@@ -18,12 +18,12 @@ func ConnectAPI(req model.RequestApi) error {
 		SetHeaders(req.Headers).
 		SetBody(req.Body).
 		Post(req.Url)
-	if err != nil {
+	if err != nil || resp.IsError() {
 		logger.Error("connect API", "error", err.Error())
 		return fmt.Errorf("connect API error %w", err)
 	}
 	logger.Debug("connect API", slog.Group("response", slog.Int("status", resp.StatusCode()), slog.Duration("response time", resp.Time()), slog.String("response body", resp.String())))
-	logger.Info("connect API", "status", constant.SUCCESS)
+	logger.Info("connect API", "status", constant.SUCCESS, "url", req.Url)
 	return nil
 }
 
@@ -62,14 +62,13 @@ func GetDataAPI(req model.RequestApi) ([]byte, error) {
 		tags.SRxTag = append(tags.SRxTag, model.SRxTag{Name: v})
 	}
 	body.Body.GetSRxData.Tags = tags
-	logger.Debug("get data API", slog.Group("request body", body))
 
 	// Encoding XML
 	xmlBody, err := xml.Marshal(body)
 	if err != nil {
 		return v, fmt.Errorf("xml encoding error %w", err)
 	}
-	logger.Debug("get data API", "xml request body", string(xmlBody))
+	logger.Debug("get data API", slog.Group("xml request", slog.String("body", string(xmlBody))))
 
 	// Get data API
 	resp, err := client.R().
@@ -77,10 +76,10 @@ func GetDataAPI(req model.RequestApi) ([]byte, error) {
 		SetHeaders(req.Headers).
 		SetBody(xmlBody).
 		Post(req.Url)
-	if err != nil {
+	if err != nil || resp.IsError() {
 		return v, fmt.Errorf("request error %w", err)
 	}
 	logger.Debug("get data API", slog.Group("response", slog.Int("status", resp.StatusCode()), slog.Duration("response time", resp.Time()), slog.String("response body", resp.String())))
-	logger.Info("get data API", "status", constant.SUCCESS)
+	logger.Info("get data API", "status", constant.SUCCESS, "url", req.Url)
 	return resp.Body(), err
 }
