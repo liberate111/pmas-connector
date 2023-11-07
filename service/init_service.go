@@ -17,7 +17,7 @@ func InitTable() {
 }
 
 func initBySite(site model.SiteConfig) {
-	logger.Info("initial table", "status", constant.START, "site", site.Name, "table", site.TableName)
+	logger.Info("initial table", "table", site.TableName, "status", constant.START, "site", site.Name)
 	reqCon := site.Api.Connect
 	reqGet := site.Api.GetData
 	table := site.TableName
@@ -29,20 +29,21 @@ func initBySite(site model.SiteConfig) {
 	respBody, err := controller.GetDataAPI(reqGet)
 	if err != nil {
 		logger.Error("get data API", "error", err.Error(), "site", site.Name)
+		return
 	}
 
 	tagData, err := util.ParseXML(respBody)
 	if err != nil {
 		logger.Error("parse xml data", "error", err.Error(), "site", site.Name)
+		return
 	}
-	// logger.Debug("result data", "data", tagData)
 
 	err = initStatus(tagData, table)
 	if err != nil {
 		logger.Error("initial table", "error", err.Error(), "site", site.Name)
 		return
 	}
-	logger.Info("initial table", "status", constant.SUCCESS, "site", site.Name, "table", site.TableName)
+	logger.Info("initial table", "table", site.TableName, "status", constant.SUCCESS, "site", site.Name)
 }
 
 func initStatus(r model.Response, table string) error {
@@ -59,7 +60,11 @@ func initStatus(r model.Response, table string) error {
 			continue
 		}
 		if len(v.Data.TimeDataItem) != 2 {
-			logger.Error("initial table", "error", "length of Data is not equal to 2", "tag", v.TagData.Name)
+			logger.Error("initial table", "error", "length of data is not equal to 2", "tag", v.TagData.Name)
+			continue
+		}
+		if v.Data.TimeDataItem[0].Value == string(util.STATUS_NAN) || v.Data.TimeDataItem[1].Value == string(util.STATUS_NAN) {
+			logger.Error("initial table", "error", "tag", v.TagData.Name, "status of tag", "NaN")
 			continue
 		}
 

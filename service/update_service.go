@@ -9,7 +9,7 @@ import (
 )
 
 func UpdateBySite(site model.SiteConfig) {
-	logger.Info("update", "status", constant.START, "site", site.Name, "table", site.TableName)
+	logger.Info("update", "table", site.TableName, "status", constant.START, "site", site.Name)
 	reqCon := site.Api.Connect
 	reqGet := site.Api.GetData
 	table := site.TableName
@@ -21,13 +21,14 @@ func UpdateBySite(site model.SiteConfig) {
 	respBody, err := controller.GetDataAPI(reqGet)
 	if err != nil {
 		logger.Error("get data API", "error", err.Error(), "site", site.Name)
+		return
 	}
 
 	tagData, err := util.ParseXML(respBody)
 	if err != nil {
 		logger.Error("parse xml data", "error", err.Error(), "site", site.Name)
+		return
 	}
-	// logger.Debug("result data", "data", tagData)
 
 	err = updateStatus(tagData, table)
 	if err != nil {
@@ -54,8 +55,12 @@ func updateStatus(r model.Response, table string) error {
 			logger.Error("update", "error", "length of Data is not equal to 2", "tag", v.TagData.Name)
 			continue
 		}
+		if v.Data.TimeDataItem[0].Value == string(util.STATUS_NAN) || v.Data.TimeDataItem[1].Value == string(util.STATUS_NAN) {
+			logger.Error("update", "error", "tag", v.TagData.Name, "status of tag", "NaN")
+			continue
+		}
 		if v.Data.TimeDataItem[0].Value == v.Data.TimeDataItem[1].Value {
-			logger.Debug("update", "tag", v.TagData.Name, "check status", "status not change")
+			logger.Debug("update", "tag", v.TagData.Name, "result", "status not change")
 			continue
 		}
 

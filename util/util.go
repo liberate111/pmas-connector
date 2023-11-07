@@ -13,6 +13,7 @@ import (
 
 type TagStatus string
 
+// Normal type
 const NUM_RED TagStatus = "14"
 const NUM_YELLOW TagStatus = "13"
 const NUM_GREEN TagStatus = "12"
@@ -25,6 +26,9 @@ const STATUS_GREEN TagStatus = "GREEN"
 const STATUS_MAGENTA TagStatus = "MAGENTA"
 const STATUS_BLUE TagStatus = "BLUE"
 const STATUS_GREY TagStatus = "GREY"
+
+// Abnormal type
+const STATUS_NAN TagStatus = "NaN"
 
 func ParseXML(data []byte) (model.Response, error) {
 	// Unmarshal
@@ -50,7 +54,7 @@ func ConvertStatus(num string) (string, error) {
 	} else if num == string(NUM_GREY) {
 		return string(STATUS_GREY), nil
 	}
-	return "", fmt.Errorf("error not match any status type: %v", num)
+	return "", fmt.Errorf("not match any status type, status: %v", num)
 }
 
 func Timestampt() (time.Time, error) {
