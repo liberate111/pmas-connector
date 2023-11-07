@@ -1,0 +1,64 @@
+app:
+  db: "sqlserver"
+  initialDB: true
+  # Everyday At 01:00
+  # schedule: "0 1 * * *"
+
+  # At every 30th minute
+  schedule: "*/30 * * * *"
+
+log:
+  level: "info"
+  # level: "debug"
+
+db:
+  sqlserver:
+    url: "sqlserver://{user}:{password}@{host ip}:{port}?database={db}"
+
+site:
+  - name: "MMT"
+    tableName: "PMAS_KPI_MMP"
+    api:
+      connect:
+        basicAuth: 
+          username: "{user}"
+          password: "{password}"
+        headers:
+          Content-Type: "text/xml"
+          SOAPAction: "{url}/Connect"
+          Host: "{host ip}"
+        url: "{url}"
+        body: '{request body}'
+      getdata:
+        basicAuth: 
+          username: "{user}"
+          password: "{password}"
+        headers:
+          Content-Type: "text/xml"
+          SOAPAction: "{url}/GetSRxData"
+          Host: "{host ip}"
+        url: "{url}"
+        tags: ["TAG_1_ALM", "TAG_2_ALM"]
+  - name: "CHN"
+    tableName: "PMAS_KPI_CHN"
+    api:
+      connect:
+        basicAuth: 
+          username: "{user}"
+          password: "{password}"
+        headers:
+          Content-Type: "text/xml"
+          SOAPAction: "{url}/Connect"
+          Host: "{host ip}"
+        url: "{url}"
+        body: '{request body}'
+      getdata:
+        basicAuth: 
+          username: "{user}"
+          password: "{password}"
+        headers:
+          Content-Type: "text/xml"
+          SOAPAction: "{url}/GetSRxData"
+          Host: "{host ip}"
+        url: "{url}"
+        tags: ["TAG_1_ALM", "TAG_2_ALM"]
