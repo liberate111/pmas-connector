@@ -15,7 +15,7 @@ func GracefulShutdown(done chan bool) {
 		signal.Notify(c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 		<-c
-		logger.Info("Application shutdown...")
+		logger.Info("event: shutdown_app, status: process, msg: Application shutdown...")
 		CloseDB()
 		done <- true
 	}()

@@ -15,7 +15,7 @@ import (
 func Cronjob() {
 	localTime, err := time.LoadLocation("Asia/Bangkok")
 	if err != nil {
-		logger.Error("cron task load local time", "error", err.Error())
+		logger.Error("event: initial_cron_task, status: error, msg:", err.Error())
 		os.Exit(1)
 	}
 	c := cron.New(cron.WithLocation(localTime))
@@ -34,4 +34,5 @@ func Cronjob() {
 	controller.GracefulShutdown(done)
 	<-done
 	defer c.Stop()
+	logger.Info("event: shutdown_app, status: success, msg: application shutdown")
 }

@@ -36,10 +36,10 @@ func InitLog() {
 
 	slog.PushHandler(h)
 
-	Info("Initial logger")
+	Info("event: initial_logger, status: success")
 	Debug("Initial config", fmt.Sprintf("config: %+v", config.Config))
 	Info(constant.BANNER)
-	Info("Start PMAS-CONNECTOR Application...")
+	Info("event: start_app, status: process, msg: start PMAS-CONNECTOR application...")
 }
 
 func Info(args ...any) {
