@@ -99,3 +99,19 @@ func UpdateStatus(status, sform, tag string, t time.Time, table string) error {
 	}
 	return nil
 }
+
+func FindByTag(tag string, table string) (string, error) {
+	if Driver == ORACLE_DB {
+		return "", fmt.Errorf("driver database dose not implement: %v", Driver)
+	} else if Driver == SQLSERVER_DB {
+		var data model.KpiTag
+		whcl := "ALM_Tag = ?"
+		tx := ConnSqlserver.Table(table).Where(whcl, tag).First(&data)
+		if tx.Error != nil {
+			return "", tx.Error
+		}
+		return data.Status, nil
+	} else {
+		return "", fmt.Errorf("driver database not support: %v", Driver)
+	}
+}

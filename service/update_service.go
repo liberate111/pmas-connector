@@ -60,10 +60,19 @@ func updateStatus(r model.Response, table string, site string) error {
 			continue
 		}
 		if v.Data.TimeDataItem[0].Value == v.Data.TimeDataItem[1].Value {
-			logger.Debug("event: update_status_tag_check_status, msg: status is not change,", "tag:", v.TagData.Name, ", site:", site)
-			continue
+			logger.Debug("event: update_status_tag_check_status_api, msg: status is not change from API,", "tag:", v.TagData.Name, ", site:", site)
+			lastStatus, err := controller.FindByTag(v.TagData.Name, table)
+			if err != nil {
+				logger.Error("event: update_status_tag_check_status_table, status: error, msg:", err.Error(), ", tag:", v.TagData.Name, ", site:", site)
+				continue
+			}
+			if v.Data.TimeDataItem[1].Value == lastStatus {
+				logger.Debug("event: update_status_tag_check_status_table, msg: status is not change from table,", "tag:", v.TagData.Name, ", site:", site)
+				continue
+			}
+			v.Data.TimeDataItem[0].Value = lastStatus
+			logger.Debug("event: update_status_tag_check_status_table, msg: status is change check from table,", "tag:", v.TagData.Name, ", site:", site)
 		}
-
 		// update
 		sform, err = util.ConvertStatus(v.Data.TimeDataItem[0].Value)
 		if err != nil {
