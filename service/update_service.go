@@ -66,27 +66,36 @@ func updateStatus(r model.Response, table string, site string) error {
 				logger.Error("event: update_status_tag_check_status_table, status: error, msg:", err.Error(), ", tag:", v.TagData.Name, ", site:", site)
 				continue
 			}
-			if v.Data.TimeDataItem[1].Value == lastStatus {
+			status, err = util.ConvertStatus(v.Data.TimeDataItem[1].Value)
+			if err != nil {
+				logger.Error("event: update_status_tag_validate_status, status: error, msg:", err.Error(), ", tag:", v.TagData.Name, ", site:", site)
+				continue
+			}
+			if status == lastStatus {
 				logger.Debug("event: update_status_tag_check_status_table, msg: status is not change from table,", "tag:", v.TagData.Name, ", site:", site)
 				continue
 			}
-			v.Data.TimeDataItem[0].Value = lastStatus
 			logger.Debug("event: update_status_tag_check_status_table, msg: status is change check from table,", "tag:", v.TagData.Name, ", site:", site)
-		}
-		// update
-		sform, err = util.ConvertStatus(v.Data.TimeDataItem[0].Value)
-		if err != nil {
-			logger.Error("event: update_status_tag_validate_status, status: error, msg:", err.Error(), ", tag:", v.TagData.Name, ", site:", site)
-			continue
-		}
-		status, err = util.ConvertStatus(v.Data.TimeDataItem[1].Value)
-		if err != nil {
-			logger.Error("event: update_status_tag_validate_status, status: error, msg:", err.Error(), ", tag:", v.TagData.Name, ", site:", site)
-			continue
-		}
-		err := controller.UpdateStatus(status, sform, v.TagData.Name, tsz, table)
-		if err != nil {
-			logger.Error("event: update_status_tag, status: error, msg:", err.Error(), ", tag:", v.TagData.Name, ", site:", site)
+			err = controller.UpdateStatus(status, lastStatus, v.TagData.Name, tsz, table)
+			if err != nil {
+				logger.Error("event: update_status_tag, status: error, msg:", err.Error(), ", tag:", v.TagData.Name, ", site:", site)
+			}
+		} else {
+			// update
+			sform, err = util.ConvertStatus(v.Data.TimeDataItem[0].Value)
+			if err != nil {
+				logger.Error("event: update_status_tag_validate_status, status: error, msg:", err.Error(), ", tag:", v.TagData.Name, ", site:", site)
+				continue
+			}
+			status, err = util.ConvertStatus(v.Data.TimeDataItem[1].Value)
+			if err != nil {
+				logger.Error("event: update_status_tag_validate_status, status: error, msg:", err.Error(), ", tag:", v.TagData.Name, ", site:", site)
+				continue
+			}
+			err := controller.UpdateStatus(status, sform, v.TagData.Name, tsz, table)
+			if err != nil {
+				logger.Error("event: update_status_tag, status: error, msg:", err.Error(), ", tag:", v.TagData.Name, ", site:", site)
+			}
 		}
 	}
 	controller.CloseStmt()
