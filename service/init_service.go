@@ -48,7 +48,7 @@ func initBySite(site model.SiteConfig) {
 
 func initStatus(r model.Response, table string, site string) error {
 	controller.CreateStmt(table)
-	var sform, status string
+	var status string
 	tsz, err := util.Timestampt()
 	if err != nil {
 		return err
@@ -69,17 +69,17 @@ func initStatus(r model.Response, table string, site string) error {
 		}
 
 		// update
-		sform, err = util.ConvertStatus(v.Data.TimeDataItem[0].Value)
-		if err != nil {
-			logger.Error("event: initial_table_validate_status, status: error, msg:", err.Error(), ", tag:", v.TagData.Name, ", site:", site)
-			continue
-		}
+		// sform, err = util.ConvertStatus(v.Data.TimeDataItem[0].Value)
+		// if err != nil {
+		// 	logger.Error("event: initial_table_validate_status, status: error, msg:", err.Error(), ", tag:", v.TagData.Name, ", site:", site)
+		// 	continue
+		// }
 		status, err = util.ConvertStatus(v.Data.TimeDataItem[1].Value)
 		if err != nil {
 			logger.Error("event: initial_table_validate_status, status: error, msg:", err.Error(), ", tag:", v.TagData.Name, ", site:", site)
 			continue
 		}
-		err := controller.UpdateStatus(status, sform, v.TagData.Name, tsz, table)
+		err := controller.InitStatus(status, v.TagData.Name, tsz, table)
 		if err != nil {
 			logger.Error("event: initial_table, status: error, msg:", err.Error(), ", tag:", v.TagData.Name, ", site:", site)
 		}
