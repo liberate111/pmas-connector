@@ -76,3 +76,14 @@ func Timestamptz(t time.Time) go_ora.TimeStampTZ {
 func FormatDatetime(t time.Time) string {
 	return t.Format(time.DateTime)
 }
+
+func TimestamptFix(t time.Time) (string, error) {
+	t = t.AddDate(0, 0, -1)
+	loc := "Asia/Bangkok"
+	zoneLoc, err := time.LoadLocation(loc)
+	if err != nil {
+		return "", err
+	}
+	fixTime := time.Date(t.Year(), t.Month(), t.Day(), 23, 55, 0, 0, zoneLoc)
+	return fixTime.Format(time.DateTime), nil
+}
