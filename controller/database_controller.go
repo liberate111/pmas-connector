@@ -89,7 +89,35 @@ func UpdateStatus(status, sform, tag string, t time.Time, table string) error {
 		}
 	} else if Driver == SQLSERVER_DB {
 		whcl := "ALM_Tag = ?"
-		data := map[string]interface{}{"Status": status, "SFrom": sform, "TimeStamp": util.FormatDatetime(t)}
+		fixTime, err := util.TimestamptFix(t)
+		if err != nil {
+			return err
+		}
+		data := map[string]interface{}{"Status": status, "SFrom": sform, "TimeStamp": fixTime}
+		tx := ConnSqlserver.Table(table).Where(whcl, tag).Updates(data)
+		if tx.Error != nil {
+			return tx.Error
+		}
+	} else {
+		return fmt.Errorf("driver database not support: %v", Driver)
+	}
+	return nil
+}
+
+func InitStatus(status, tag string, t time.Time, table string) error {
+	if Driver == ORACLE_DB {
+		tsz := util.Timestamptz(t)
+		_, err := stmt.Exec([]driver.Value{status, tsz, tag})
+		if err != nil {
+			return err
+		}
+	} else if Driver == SQLSERVER_DB {
+		whcl := "ALM_Tag = ?"
+		fixTime, err := util.TimestamptFix(t)
+		if err != nil {
+			return err
+		}
+		data := map[string]interface{}{"Status": status, "TimeStamp": fixTime}
 		tx := ConnSqlserver.Table(table).Where(whcl, tag).Updates(data)
 		if tx.Error != nil {
 			return tx.Error
