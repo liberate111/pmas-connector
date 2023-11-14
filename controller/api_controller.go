@@ -30,7 +30,7 @@ func ConnectAPI(req model.RequestApi) error {
 func GetDataAPI(req model.RequestApi) ([]byte, error) {
 	var v []byte
 	// Create request body
-	t := time.Now().AddDate(0, 0, -1)
+	t := time.Now().AddDate(0, 0, -2)
 	loc := "Asia/Bangkok"
 	zoneLoc, err := time.LoadLocation(loc)
 	if err != nil {
