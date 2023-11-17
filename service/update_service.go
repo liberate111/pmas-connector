@@ -72,7 +72,7 @@ func updateStatus(r model.Response, table string, site string) error {
 				continue
 			}
 			if status == lastStatus {
-				logger.Debug("event: update_status_tag_check_status_table, msg: status is not change from table,", "tag:", v.TagData.Name, ", site:", site)
+				logger.Info("event: update_status_tag_check_status_table, msg: status is not change from table,", "tag:", v.TagData.Name, ", site:", site)
 				continue
 			}
 			logger.Debug("event: update_status_tag_check_status_table, msg: status is change check from table,", "tag:", v.TagData.Name, ", site:", site)
@@ -80,6 +80,7 @@ func updateStatus(r model.Response, table string, site string) error {
 			if err != nil {
 				logger.Error("event: update_status_tag, status: error, msg:", err.Error(), ", tag:", v.TagData.Name, ", site:", site)
 			}
+			logger.Info("event: update_status_tag, status: success, msg: status has been changed from table ", ", tag:", v.TagData.Name, ", site:", site)
 		} else {
 			// update
 			sform, err = util.ConvertStatus(v.Data.TimeDataItem[0].Value)
@@ -96,6 +97,7 @@ func updateStatus(r model.Response, table string, site string) error {
 			if err != nil {
 				logger.Error("event: update_status_tag, status: error, msg:", err.Error(), ", tag:", v.TagData.Name, ", site:", site)
 			}
+			logger.Info("event: update_status_tag, status: success, status has been changed from api", ", tag:", v.TagData.Name, ", site:", site)
 		}
 	}
 	controller.CloseStmt()

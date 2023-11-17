@@ -83,6 +83,7 @@ func initStatus(r model.Response, table string, site string) error {
 		if err != nil {
 			logger.Error("event: initial_table, status: error, msg:", err.Error(), ", tag:", v.TagData.Name, ", site:", site)
 		}
+		logger.Info("event: initial_table, status: success, msg: initial status tag", ", tag:", v.TagData.Name, ", site:", site)
 	}
 	controller.CloseStmt()
 	return nil
